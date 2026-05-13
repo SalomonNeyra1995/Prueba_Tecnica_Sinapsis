@@ -7,26 +7,26 @@ const crearCampana = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { cliente_id, nombre, fecha_programacion, mensajes } = req.body;
+    const { idUsuario, nombre, fechaHoraProgramacion, mensajes } = req.body;
     const connection = await pool.getConnection();
 
     try {
         await connection.beginTransaction();
 
-        // Verificar si el cliente existe
-        const [cliente] = await connection.execute(
-            'SELECT id FROM clientes WHERE id = ?',
-            [cliente_id]
+        // Verificar si el usuario existe y está activo
+        const [usuario] = await connection.execute(
+            'SELECT idUsuario FROM Usuario WHERE idUsuario = ? AND estado = 1',
+            [idUsuario]
         );
 
-        if (cliente.length === 0) {
+        if (usuario.length === 0) {
             await connection.rollback();
-            return res.status(404).json({ error: 'Cliente no encontrado' });
+            return res.status(404).json({ error: 'Usuario no encontrado o inactivo' });
         }
 
         // Verificar que la fecha sea futura
         const fechaActual = new Date();
-        const fechaProgramacion = new Date(fecha_programacion);
+        const fechaProgramacion = new Date(fechaHoraProgramacion);
         
         if (fechaProgramacion <= fechaActual) {
             await connection.rollback();
@@ -35,18 +35,18 @@ const crearCampana = async (req, res) => {
 
         // Insertar campaña
         const [campanaResult] = await connection.execute(
-            'INSERT INTO campanas (cliente_id, nombre, fecha_programacion) VALUES (?, ?, ?)',
-            [cliente_id, nombre, fecha_programacion]
+            'INSERT INTO Campania (nombre, idUsuario, fechaHoraProgramacion, estado) VALUES (?, ?, ?, 1)',
+            [nombre, idUsuario, fechaHoraProgramacion]
         );
 
-        const campanaId = campanaResult.insertId;
+        const idCampania = campanaResult.insertId;
 
-        // Insertar mensajes
+        // Insertar mensajes (estadoEnvio: 1 = Pendiente)
         if (mensajes && mensajes.length > 0) {
             for (const mensaje of mensajes) {
                 await connection.execute(
-                    'INSERT INTO mensajes (campana_id, contenido) VALUES (?, ?)',
-                    [campanaId, mensaje.contenido]
+                    'INSERT INTO Mensaje (idCampania, estadoEnvio, mensaje, estado) VALUES (?, 1, ?, 1)',
+                    [idCampania, mensaje.contenido]
                 );
             }
         }
@@ -55,7 +55,7 @@ const crearCampana = async (req, res) => {
 
         res.status(201).json({
             message: 'Campaña creada exitosamente',
-            campana_id: campanaId,
+            idCampania: idCampania,
             total_mensajes: mensajes?.length || 0
         });
 

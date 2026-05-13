@@ -7,7 +7,7 @@ const obtenerReporteMensajes = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
     }
 
-    const { mes, cliente_id } = req.query;
+    const { mes, idCliente } = req.query;
     
     if (!mes) {
         return res.status(400).json({ error: 'El parámetro mes es obligatorio' });
@@ -20,26 +20,35 @@ const obtenerReporteMensajes = async (req, res) => {
             return res.status(400).json({ error: 'Formato de mes inválido. Use YYYY-MM' });
         }
         
+        // Mapeo de estados de envío
+        // 1: Pendiente, 2: Enviado, 3: Error
+        
         let query = `
             SELECT 
-                mensajes.estado_envio,
+                CASE 
+                    WHEN m.estadoEnvio = 1 THEN 'Pendiente'
+                    WHEN m.estadoEnvio = 2 THEN 'Enviado'
+                    WHEN m.estadoEnvio = 3 THEN 'Error'
+                    ELSE 'Desconocido'
+                END AS estado_envio,
                 COUNT(*) as total
-            FROM mensajes
-            INNER JOIN campanas ON mensajes.campana_id = campanas.id
-            WHERE campanas.activa = 1
-                AND mensajes.activo = 1
-                AND YEAR(campanas.fecha_programacion) = ?
-                AND MONTH(campanas.fecha_programacion) = ?
+            FROM Mensaje m
+            INNER JOIN Campania c ON m.idCampania = c.idCampania
+            INNER JOIN Usuario u ON c.idUsuario = u.idUsuario
+            WHERE c.estado = 1
+                AND m.estado = 1
+                AND YEAR(c.fechaHoraProgramacion) = ?
+                AND MONTH(c.fechaHoraProgramacion) = ?
         `;
         
         const params = [parseInt(year), parseInt(month)];
         
-        if (cliente_id) {
-            query += ` AND campanas.cliente_id = ?`;
-            params.push(parseInt(cliente_id));
+        if (idCliente) {
+            query += ` AND u.idCliente = ?`;
+            params.push(parseInt(idCliente));
         }
         
-        query += ` GROUP BY mensajes.estado_envio`;
+        query += ` GROUP BY m.estadoEnvio ORDER BY m.estadoEnvio`;
         
         const [results] = await pool.execute(query, params);
         
@@ -47,7 +56,7 @@ const obtenerReporteMensajes = async (req, res) => {
         
     } catch (error) {
         console.error('Error en reporte:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        res.status(500).json({ error: 'Error al generar el reporte' });
     }
 };
 

@@ -2,62 +2,122 @@
 CREATE DATABASE IF NOT EXISTS sinapsis_db;
 USE sinapsis_db;
 
--- Tabla de clientes
-CREATE TABLE IF NOT EXISTS clientes (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+-- =============================================
+-- Tabla: Cliente
+-- =============================================
+CREATE TABLE IF NOT EXISTS Cliente (
+    idCliente INT(11) PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
-    telefono VARCHAR(20),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    estado TINYINT(1) DEFAULT 1 COMMENT '0: Inactivo, 1: Activo'
 );
 
--- Tabla de campañas
-CREATE TABLE IF NOT EXISTS campanas (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    cliente_id INT NOT NULL,
-    nombre VARCHAR(100) NOT NULL,
-    descripcion TEXT,
-    fecha_programacion DATE NOT NULL,
-    activa BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE,
-    INDEX idx_fecha_programacion (fecha_programacion),
-    INDEX idx_cliente_activo (cliente_id, activa)
+-- =============================================
+-- Tabla: Usuario
+-- =============================================
+CREATE TABLE IF NOT EXISTS Usuario (
+    idUsuario INT(11) PRIMARY KEY AUTO_INCREMENT,
+    idCliente INT(11) NOT NULL,
+    usuario VARCHAR(30) NOT NULL,
+    estado TINYINT(1) DEFAULT 1 COMMENT '0: Inactivo, 1: Activo',
+    FOREIGN KEY (idCliente) REFERENCES Cliente(idCliente) ON DELETE CASCADE,
+    INDEX idx_idCliente (idCliente)
 );
 
--- Tabla de mensajes
-CREATE TABLE IF NOT EXISTS mensajes (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    campana_id INT NOT NULL,
-    contenido TEXT NOT NULL,
-    estado_envio ENUM('pendiente', 'enviado', 'fallido', 'cancelado') DEFAULT 'pendiente',
-    activo BOOLEAN DEFAULT TRUE,
-    fecha_envio DATETIME,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (campana_id) REFERENCES campanas(id) ON DELETE CASCADE,
-    INDEX idx_estado_activo (estado_envio, activo),
-    INDEX idx_campana_activo (campana_id, activo)
+-- =============================================
+-- Tabla: Campania
+-- =============================================
+CREATE TABLE IF NOT EXISTS Campania (
+    idCampania INT(11) PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(200) NOT NULL,
+    idUsuario INT(11) NOT NULL,
+    fechaHoraProgramacion DATETIME NOT NULL,
+    estado TINYINT(1) DEFAULT 1 COMMENT '0: Inactivo, 1: Activo',
+    FOREIGN KEY (idUsuario) REFERENCES Usuario(idUsuario) ON DELETE CASCADE,
+    INDEX idx_idUsuario (idUsuario),
+    INDEX idx_fechaProgramacion (fechaHoraProgramacion)
 );
 
--- Insertar datos de prueba
-INSERT INTO clientes (nombre, email, telefono) VALUES
-('Cliente Uno', 'cliente1@example.com', '123456789'),
-('Cliente Dos', 'cliente2@example.com', '987654321'),
-('Cliente Tres', 'cliente3@example.com', '555555555');
+-- =============================================
+-- Tabla: Mensaje
+-- =============================================
+CREATE TABLE IF NOT EXISTS Mensaje (
+    idMensaje INT(11) PRIMARY KEY AUTO_INCREMENT,
+    idCampania INT(11) NOT NULL,
+    estadoEnvio INT(11) NOT NULL COMMENT '1: Pendiente, 2: Enviado, 3: Error',
+    fechaHoraEnvio DATETIME,
+    mensaje VARCHAR(160) NOT NULL,
+    estado TINYINT(1) DEFAULT 1 COMMENT '0: Inactivo, 1: Activo',
+    FOREIGN KEY (idCampania) REFERENCES Campania(idCampania) ON DELETE CASCADE,
+    INDEX idx_idCampania (idCampania),
+    INDEX idx_estadoEnvio (estadoEnvio)
+);
 
-INSERT INTO campanas (cliente_id, nombre, fecha_programacion, activa) VALUES
-(1, 'Campaña Black Friday', '2025-11-29', TRUE),
-(1, 'Campaña Cyber Monday', '2025-12-02', TRUE),
-(2, 'Campaña Navidad', '2025-12-25', TRUE),
-(3, 'Campaña Año Nuevo', '2026-01-01', TRUE);
+-- =============================================
+-- INSERTAR DATOS DE PRUEBA
+-- =============================================
 
-INSERT INTO mensajes (campana_id, contenido, estado_envio, activo) VALUES
-(1, 'Oferta 50% off', 'pendiente', TRUE),
-(1, '2x1 en productos', 'enviado', TRUE),
-(2, 'Descuento especial', 'pendiente', TRUE),
-(3, 'Feliz navidad', 'enviado', TRUE),
-(3, 'Regalo sorpresa', 'fallido', TRUE),
-(4, 'Año nuevo 2026', 'pendiente', TRUE);
+-- Insertar Clientes
+INSERT INTO Cliente (idCliente, nombre, estado) VALUES
+(1, 'Cliente Uno', 1),
+(2, 'Cliente Dos', 1),
+(3, 'Cliente Tres', 1);
+
+-- Insertar Usuarios
+INSERT INTO Usuario (idUsuario, idCliente, usuario, estado) VALUES
+(1, 1, 'usuario1', 1),
+(2, 1, 'usuario2', 1),
+(3, 2, 'usuario3', 1),
+(4, 3, 'usuario4', 1);
+
+-- Insertar Campañas
+INSERT INTO Campania (idCampania, nombre, idUsuario, fechaHoraProgramacion, estado) VALUES
+(1, 'Campaña Black Friday', 1, '2025-11-29 10:00:00', 1),
+(2, 'Campaña Cyber Monday', 1, '2025-12-02 10:00:00', 1),
+(3, 'Campaña Navidad', 3, '2025-12-25 09:00:00', 1),
+(4, 'Campaña Año Nuevo', 4, '2026-01-01 00:00:00', 1);
+
+-- Insertar Mensajes
+INSERT INTO Mensaje (idMensaje, idCampania, estadoEnvio, fechaHoraEnvio, mensaje, estado) VALUES
+(1, 1, 1, NULL, 'Oferta 50% off - Black Friday', 1),
+(2, 1, 2, '2025-11-29 10:05:00', '2x1 en productos seleccionados', 1),
+(3, 1, 3, '2025-11-29 10:00:00', 'Oferta relámpago', 1),
+(4, 2, 1, NULL, 'Descuento especial Cyber Monday', 1),
+(5, 3, 2, '2025-12-25 09:05:00', 'Feliz Navidad', 1),
+(6, 3, 3, '2025-12-25 09:00:00', 'Regalo sorpresa', 1),
+(7, 4, 1, NULL, 'Feliz Año Nuevo 2026', 1);
+
+-- =============================================
+-- CONSULTAS DE VERIFICACIÓN
+-- =============================================
+
+-- Ver todos los clientes
+SELECT * FROM Cliente;
+
+-- Ver usuarios por cliente
+SELECT c.nombre, u.usuario 
+FROM Cliente c 
+INNER JOIN Usuario u ON c.idCliente = u.idCliente;
+
+-- Ver campañas con usuario y cliente
+SELECT 
+    ca.idCampania,
+    ca.nombre AS campania,
+    u.usuario,
+    c.nombre AS cliente,
+    ca.fechaHoraProgramacion
+FROM Campania ca
+INNER JOIN Usuario u ON ca.idUsuario = u.idUsuario
+INNER JOIN Cliente c ON u.idCliente = c.idCliente;
+
+-- Ver mensajes por campaña
+SELECT 
+    m.idMensaje,
+    ca.nombre AS campania,
+    CASE m.estadoEnvio
+        WHEN 1 THEN 'Pendiente'
+        WHEN 2 THEN 'Enviado'
+        WHEN 3 THEN 'Error'
+    END AS estado,
+    m.mensaje
+FROM Mensaje m
+INNER JOIN Campania ca ON m.idCampania = ca.idCampania;

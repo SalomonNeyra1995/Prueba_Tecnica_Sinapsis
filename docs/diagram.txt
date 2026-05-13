@@ -1,0 +1,34 @@
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│    Cliente      │     │    Usuario      │     │    Campania     │     │    Mensaje      │
+├─────────────────┤     ├─────────────────┤     ├─────────────────┤     ├─────────────────┤
+│ idCliente (PK)  │────<│ idCliente (FK)  │     │ idCampania (PK) │     │ idMensaje (PK)  │
+│ nombre          │     │ idUsuario (PK)  │────<│ idUsuario (FK)  │     │ idCampania (FK) │
+│ estado          │     │ usuario         │     │ nombre          │     │ estadoEnvio     │
+└─────────────────┘     │ estado          │     │ fechaHoraProgram│     │ fechaHoraEnvio  │
+                        └─────────────────┘     │ estado          │     │ mensaje         │
+                                                └─────────────────┘     │ estado          │
+                                                                        └─────────────────┘
+
+RELACIONES:
+═══════════════════════════════════════════════════════════════════════════════
+
+  Cliente (1) ──────────────→ Usuario (N)
+  Un cliente puede tener muchos usuarios
+
+  Usuario (1) ──────────────→ Campania (N)
+  Un usuario puede crear muchas campañas
+
+  Campania (1) ──────────────→ Mensaje (N)
+  Una campaña puede tener muchos mensajes
+
+ESTADOS:
+═══════════════════════════════════════════════════════════════════════════════
+
+  estado (Cliente, Usuario, Campania, Mensaje):
+  • 0 = Inactivo
+  • 1 = Activo
+
+  estadoEnvio (Mensaje):
+  • 1 = Pendiente
+  • 2 = Enviado
+  • 3 = Error

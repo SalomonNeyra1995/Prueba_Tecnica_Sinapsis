@@ -8,8 +8,8 @@ describe('Reportes API', () => {
                 .get('/api/reportes/mensajes');
             
             expect(res.statusCode).toBe(400);
-            // Tu API puede devolver error o errors
-            expect(res.body.error || res.body.errors).toBeDefined();
+            // Tu API devuelve "errors" (plural)
+            expect(res.body.errors).toBeDefined();
         });
 
         it('debería aceptar formato de mes válido', async () => {
@@ -25,12 +25,13 @@ describe('Reportes API', () => {
                 .get('/api/reportes/mensajes?mes=2025/11');
             
             expect(res.statusCode).toBe(400);
-            expect(res.body.error || res.body.errors).toBeDefined();
+            // Tu API devuelve "errors" (plural)
+            expect(res.body.errors).toBeDefined();
         });
 
-        it('debería filtrar por cliente_id opcional', async () => {
+        it('debería filtrar por idCliente opcional', async () => {
             const res = await request(app)
-                .get('/api/reportes/mensajes?mes=2025-11&cliente_id=1');
+                .get('/api/reportes/mensajes?mes=2025-11&idCliente=1');
             
             expect(res.statusCode).toBe(200);
             expect(Array.isArray(res.body)).toBe(true);

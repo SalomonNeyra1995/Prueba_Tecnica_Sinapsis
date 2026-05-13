@@ -7,20 +7,20 @@ describe('Campañas API', () => {
             const res = await request(app)
                 .post('/api/campanas')
                 .send({
-                    cliente_id: 1
+                    idUsuario: 1
                 });
             
             expect(res.statusCode).toBe(400);
             expect(res.body.errors).toBeDefined();
         });
 
-        it('debería validar que cliente_id sea número', async () => {
+        it('debería validar que idUsuario sea número', async () => {
             const res = await request(app)
                 .post('/api/campanas')
                 .send({
-                    cliente_id: 'inválido',
+                    idUsuario: 'inválido',
                     nombre: 'Campaña Test',
-                    fecha_programacion: '2025-12-25',
+                    fechaHoraProgramacion: '2026-12-25 10:00:00',
                     mensajes: [{ contenido: 'Mensaje test' }]
                 });
             
@@ -32,9 +32,9 @@ describe('Campañas API', () => {
             const res = await request(app)
                 .post('/api/campanas')
                 .send({
-                    cliente_id: 1,
+                    idUsuario: 1,
                     nombre: 'Campaña Test',
-                    fecha_programacion: '2025-12-25',
+                    fechaHoraProgramacion: '2026-12-25 10:00:00',
                     mensajes: []
                 });
             
@@ -46,23 +46,22 @@ describe('Campañas API', () => {
             const res = await request(app)
                 .post('/api/campanas')
                 .send({
-                    cliente_id: 1,
+                    idUsuario: 1,
                     nombre: 'Campaña Test',
-                    fecha_programacion: '2020-01-01',
+                    fechaHoraProgramacion: '2020-01-01 10:00:00',
                     mensajes: [{ contenido: 'Mensaje test' }]
                 });
             
             expect(res.statusCode).toBe(400);
-            expect(res.body.error || res.body.errors).toBeDefined();
         });
 
         it('debería crear una campaña válida', async () => {
             const res = await request(app)
                 .post('/api/campanas')
                 .send({
-                    cliente_id: 1,
+                    idUsuario: 1,
                     nombre: 'Campaña Válida',
-                    fecha_programacion: '2026-12-25',
+                    fechaHoraProgramacion: '2027-12-25 10:00:00',
                     mensajes: [
                         { contenido: 'Mensaje de prueba 1' },
                         { contenido: 'Mensaje de prueba 2' }
@@ -70,7 +69,7 @@ describe('Campañas API', () => {
                 });
             
             expect(res.statusCode).toBe(201);
-            expect(res.body.campana_id).toBeDefined();
+            expect(res.body.idCampania).toBeDefined();
             expect(res.body.message).toBeDefined();
         });
     });

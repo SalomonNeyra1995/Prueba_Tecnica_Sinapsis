@@ -11,10 +11,10 @@ const validarReporte = [
         .withMessage('El parámetro mes es obligatorio')
         .matches(/^\d{4}-\d{2}$/)
         .withMessage('Formato de mes inválido. Use YYYY-MM'),
-    query('cliente_id')
+    query('idCliente')
         .optional()
         .isInt({ min: 1 })
-        .withMessage('cliente_id debe ser un número entero positivo')
+        .withMessage('idCliente debe ser un número entero positivo')
 ];
 
 // Ruta para obtener reporte
