@@ -1,0 +1,297 @@
+openapi: 3.0.0
+info:
+  title: Sinapsis Marketing API
+  description: API para gestión de campañas de marketing y reportes de mensajes
+  version: 1.0.0
+  contact:
+    name: Soporte Sinapsis
+    email: soporte@sinapsiscorp.com
+  license:
+    name: Proprietary
+    url: https://www.sinapsiscorp.com
+
+servers:
+  - url: http://localhost:3000/api
+    description: Servidor de desarrollo local
+  - url: https://api.sinapsiscorp.com/api
+    description: Servidor de producción
+
+tags:
+  - name: Campañas
+    description: Endpoints para gestionar campañas de marketing
+  - name: Reportes
+    description: Endpoints para obtener reportes de mensajes
+  - name: Health
+    description: Endpoints de verificación del servicio
+
+paths:
+  /health:
+    get:
+      summary: Verificar estado del servicio
+      description: Endpoint para comprobar que el servidor está funcionando correctamente
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Servidor funcionando correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "OK"
+                message: "Servidor funcionando correctamente"
+
+  /campanas:
+    post:
+      summary: Programar una nueva campaña
+      description: Permite a los clientes programar campañas de marketing con sus mensajes
+      operationId: crearCampana
+      tags:
+        - Campañas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampanaRequest'
+            examples:
+              ejemplo1:
+                summary: Campaña Black Friday
+                value:
+                  cliente_id: 1
+                  nombre: "Black Friday 2025"
+                  fecha_programacion: "2025-11-29"
+                  mensajes: [
+                    { contenido: "Oferta especial 50% off" },
+                    { contenido: "2x1 en productos seleccionados" }
+                  ]
+      responses:
+        '201':
+          description: Campaña creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CampanaResponse'
+              example:
+                message: "Campaña creada exitosamente"
+                campana_id: 5
+                total_mensajes: 2
+        '400':
+          description: Error de validación en los datos enviados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Cliente no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /reportes/mensajes:
+    get:
+      summary: Reporte de mensajes activos
+      description: Obtiene la cantidad de mensajes activos programados clasificados por estado de envío
+      operationId: obtenerReporteMensajes
+      tags:
+        - Reportes
+      parameters:
+        - name: mes
+          in: query
+          required: true
+          description: Mes a filtrar en formato YYYY-MM
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}$'
+            example: "2025-11"
+          example: "2025-11"
+        - name: cliente_id
+          in: query
+          required: false
+          description: ID del cliente para filtrar (opcional)
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+          example: 1
+      responses:
+        '200':
+          description: Reporte generado exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReporteItem'
+              examples:
+                sinFiltro:
+                  summary: Reporte sin filtro de cliente
+                  value: [
+                    { estado_envio: "pendiente", total: 10 },
+                    { estado_envio: "enviado", total: 25 },
+                    { estado_envio: "fallido", total: 3 }
+                  ]
+                conFiltro:
+                  summary: Reporte con filtro de cliente
+                  value: [
+                    { estado_envio: "pendiente", total: 5 },
+                    { estado_envio: "enviado", total: 12 }
+                  ]
+        '400':
+          description: Parámetros inválidos (mes faltante o formato incorrecto)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                mesFaltante:
+                  value:
+                    error: "El parámetro mes es obligatorio"
+                formatoInvalido:
+                  value:
+                    error: "Formato de mes inválido. Use YYYY-MM"
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [OK]
+          description: Estado del servidor
+        message:
+          type: string
+          description: Mensaje descriptivo
+      required:
+        - status
+        - message
+
+    CampanaRequest:
+      type: object
+      required:
+        - cliente_id
+        - nombre
+        - fecha_programacion
+        - mensajes
+      properties:
+        cliente_id:
+          type: integer
+          minimum: 1
+          description: ID del cliente
+          example: 1
+        nombre:
+          type: string
+          minLength: 3
+          maxLength: 100
+          description: Nombre de la campaña
+          example: "Black Friday 2025"
+        fecha_programacion:
+          type: string
+          format: date
+          description: Fecha en que se enviarán los mensajes (debe ser futura)
+          example: "2025-11-29"
+        mensajes:
+          type: array
+          minItems: 1
+          description: Lista de mensajes a enviar
+          items:
+            type: object
+            required:
+              - contenido
+            properties:
+              contenido:
+                type: string
+                minLength: 1
+                maxLength: 500
+                description: Contenido del mensaje
+                example: "Oferta especial 50% off"
+
+    CampanaResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Mensaje de confirmación
+          example: "Campaña creada exitosamente"
+        campana_id:
+          type: integer
+          description: ID de la campaña creada
+          example: 5
+        total_mensajes:
+          type: integer
+          description: Cantidad de mensajes registrados
+          example: 2
+      required:
+        - message
+        - campana_id
+        - total_mensajes
+
+    ReporteItem:
+      type: object
+      properties:
+        estado_envio:
+          type: string
+          enum:
+            - pendiente
+            - enviado
+            - fallido
+            - cancelado
+          description: Estado de envío del mensaje
+          example: "pendiente"
+        total:
+          type: integer
+          description: Cantidad de mensajes en ese estado
+          minimum: 0
+          example: 10
+      required:
+        - estado_envio
+        - total
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Mensaje de error descriptivo
+          example: "Error al generar el reporte"
+        errors:
+          type: array
+          description: Lista de errores de validación (cuando aplica)
+          items:
+            type: object
+            properties:
+              msg:
+                type: string
+              param:
+                type: string
+              location:
+                type: string
+        detalle:
+          type: string
+          description: Detalle técnico del error (solo en desarrollo)
+
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      name: X-API-Key
+      in: header
+      description: API Key para autenticación (opcional)
+
+security:
+  - apiKey: []

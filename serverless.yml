@@ -1,0 +1,38 @@
+service: sinapsis-backend
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: dev
+  environment:
+    DB_HOST: localhost
+    DB_USER: root
+    DB_PASSWORD: ""
+    DB_NAME: sinapsis_db
+    DB_PORT: "3306"
+    NODE_ENV: development
+
+functions:
+  api:
+    handler: src/handler.handler
+    events:
+      - httpApi:
+          method: ANY
+          path: /
+      - httpApi:
+          method: ANY
+          path: /{proxy+}
+    timeout: 30
+    memorySize: 256
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+    lambdaPort: 3002
+    noPrependStageInUrl: true
